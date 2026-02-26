@@ -1,54 +1,214 @@
-1. Importación de Librerías y LimpiezaEn esta parte, preparamos el entorno de trabajo.
+# Pasillo Procedural Curvo en Blender
+
+Generador procedural de un pasillo 3D curvo con animación automática usando Python en Blender.
+Este proyecto demuestra cómo crear entornos 3D automáticamente mediante código, sin modelado manual.
+
+---
+
+## Descripción
+
+El script crea de forma automática:
+
+* Paredes con variación procedural
+* Materiales generados por código
+* Suelo continuo
+* Cámara animada
+* Escena lista para render
+
+Todo el entorno se genera al ejecutar el script.
+
+---
+
+## Requisitos
+
+* Blender 3.x o superior
+* Python (incluido en Blender)
+
+---
+
+## Instalación
+
+1. Clonar el repositorio:
+
+```bash
+git clone https://github.com/tu_usuario/pasillo-procedural-blender.git
+```
+
+2. Abrir Blender
+3. Ir a la pestaña Scripting
+4. Abrir el archivo:
+
+```bash
+src/pasillo_procedural.py
+```
+
+5. Ejecutar el script
+6. Presionar Play para ver la animación
+
+---
+
+## Explicación del código
+
+### 1. Importación de librerías
+
 ```python
-Pythonimport bpy
+import bpy
 import math
+```
 
-# Limpiar escena
+* `bpy` permite controlar Blender desde Python.
+* `math` se usa para funciones trigonométricas y generación de curvas.
 
-bpy.ops.object.select_all(action='SELECT')
+---
+
+### 2. Creación de materiales
+
+La función:
+
+```python
+def crear_material(nombre, color_rgb):
+```
+
+Se encarga de:
+
+* Crear materiales automáticamente.
+* Ajustar el color base.
+* Evitar duplicación de código.
+
+Esto permite modificar la apariencia del entorno de forma rápida.
+
+---
+
+### 3. Limpieza de la escena
+
+Antes de generar el pasillo, el script elimina todos los objetos:
+
+```python
+bpy.ops.object.select_all(action="SELECT")
 bpy.ops.object.delete()
 ```
-- import bpy: Importa la librería de Blender para poder crear objetos, moverlos, etc.import math: Necesaria para usar funciones matemáticas como el seno (sin), coseno (cos) y la conversión a radianes.
-- Limpieza: Estas líneas seleccionan todo lo que haya en la escena actual y lo borran para que el script empiece desde cero cada vez que lo ejecutes.
 
-2. Configuración de Parámetros
-Aquí definimos las "reglas" de nuestra figura.
-```Python
-radio = 3
-- angulo_actual = 0
-paso_angular = 30 # Define la separación entre cada círculo
+Esto asegura que la escena esté limpia si el script se ejecuta varias veces.
+
+---
+
+### 4. Parámetros principales
+
+```python
+ancho = 3.0
+paso = 3.0
+total_bloques = 60
+altura_pared = 3.0
+grosor_pared = 1.0
 ```
-- radio: El tamaño de los círculos.
-- paso_angular: Es el ángulo que saltamos para poner el siguiente círculo. Si pones 60°, obtendrás 6 círculos alrededor; con 30° como está aquí, obtendrás 12.3.
 
-3. El Círculo Central y los Primeros Pasos
-Antes de automatizar, el código coloca el centro y los primeros dos pétalos manualmente.
+Estos valores controlan:
 
-```Python
-# 1. Círculo Central
-bpy.ops.mesh.primitive_circle_add(radius=radio, location=(0, 0, 0), vertices=64)
+* El tamaño del pasillo.
+* Su longitud.
+* La escala general.
 
-# Círculo 1 (Manual)
-x1 = radio * math.cos(math.radians(angulo_actual))
-y1 = radio * math.sin(math.radians(angulo_actual))
-bpy.ops.mesh.primitive_circle_add(radius=radio, location=(x1, y1, 0), vertices=64)
+Se pueden modificar fácilmente para generar distintos entornos.
+
+---
+
+### 5. Curvatura procedural
+
+La función:
+
+```python
+def offset_x(i):
 ```
-Trigonometría: Para saber dónde poner el círculo, usamos las fórmulas:
-- x = radio*cos(0)
-- y = radio sin(0)
-- math.radians: Es vital porque las funciones cos y sin no entienden "grados" (0-360), sino "radianes".
 
-4. Automatización con el Ciclo while
+Desplaza cada bloque del pasillo lateralmente.
+Se utiliza una función coseno para crear curvas suaves, evitando cambios bruscos de dirección.
 
-Esta es la parte más eficiente. En lugar de escribir el código 12 veces, le pedimos a la computadora que lo repita hasta dar la vuelta completa (360°).
-```Python 
-while angulo_actual < 360:
-    x = radio * math.cos(math.radians(angulo_actual)) 
-    y = radio * math.sin(math.radians(angulo_actual))
-    bpy.ops.mesh.primitive_circle_add(radius=radio, location=(x, y, 0), vertices=64)
-    
-    # Incremento: ¡Súper importante para no crear un bucle infinito!
-    angulo_actual += paso_angular
+Esto mejora:
+
+* La continuidad visual.
+* El realismo.
+* La calidad de la animación.
+
+---
+
+### 6. Orientación del pasillo
+
+```python
+def angulo_tangente(i):
 ```
-- while angulo_actual < 360: "Mientras no hayamos completado el círculo, sigue haciendo esto".
-- angulo_actual += paso_angular: En cada vuelta del ciclo, sumamos 30 grados a la posición. Así, el siguiente círculo se moverá un poco más en la circunferencia.
+
+Calcula el ángulo de cada sección usando la tangente de la curva.
+Esto permite:
+
+* Rotar correctamente las paredes.
+* Mantener la coherencia de la geometría.
+* Orientar la cámara.
+
+---
+
+### 7. Creación de paredes
+
+El script crea cubos para cada sección:
+
+* Escala los objetos.
+* Los rota según la curva.
+* Alterna materiales para mejorar el detalle.
+
+Esto genera un entorno más variado.
+
+---
+
+### 8. Suelo procedural
+
+En lugar de utilizar cubos, el suelo se crea como una malla continua:
+
+```python
+mesh.from_pydata(verts, [], faces)
+```
+
+Ventajas:
+
+* Mejor rendimiento.
+* Superficie continua.
+* Mayor control.
+
+---
+
+### 9. Animación de la cámara
+
+El script:
+
+* Crea una cámara.
+* Inserta keyframes automáticamente.
+* Suaviza la interpolación.
+
+Esto genera un recorrido automático por el pasillo.
+
+---
+
+### 10. Configuración de render
+
+Se configuran:
+
+* FPS
+* Resolución
+* Duración de la animación.
+
+Esto permite obtener una previsualización rápida.
+
+---
+
+## Personalización
+
+Puedes modificar:
+
+| Parámetro     | Descripción             |
+| ------------- | ----------------------- |
+| ancho         | Ancho del pasillo       |
+| paso          | Distancia entre bloques |
+| total_bloques | Longitud                |
+| altura_pared  | Altura                  |
+| grosor_pared  | Grosor                  |
+
+---
+
